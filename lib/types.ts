@@ -28,6 +28,12 @@ export interface ClaudeStats {
     prompt: string; // latest user prompt text
     idleSeconds: number; // seconds since last activity
   };
+  limits: {
+    // Subscription usage limits, read from the statusline rate-limit cache.
+    // null when there is no fresh cached data.
+    fiveHour: { percent: number; reset: string } | null; // rolling 5h window; reset like "1h39m"
+    sevenDay: { percent: number; reset: string } | null; // rolling 7d window; reset like "4d11h"
+  };
   updatedAt: string; // "21:01:40"
   date: string; // "2026-05-21"
 }
