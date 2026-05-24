@@ -1,4 +1,5 @@
 import type { SystemStats } from "@/lib/types";
+import { formatRate } from "@/lib/format";
 import RingGauge from "./RingGauge";
 import NetworkChart from "./NetworkChart";
 
@@ -6,6 +7,8 @@ const rightAlign = { alignItems: "flex-end", textAlign: "right" } as const;
 
 export default function BridgeScreen({ stats }: { stats: SystemStats | null }) {
   const s = stats;
+  const down = formatRate(s?.network.downKBs ?? 0);
+  const up = formatRate(s?.network.upKBs ?? 0);
 
   return (
     <section className="screen">
@@ -43,15 +46,15 @@ export default function BridgeScreen({ stats }: { stats: SystemStats | null }) {
         <div className="stat">
           <span className="label">↓ Download</span>
           <div>
-            <span className="big-kb">{s?.network.downKBs ?? 0}</span>
-            <span className="unit">kB/s</span>
+            <span className="big-kb">{down.value}</span>
+            <span className="unit">{down.unit}</span>
           </div>
         </div>
         <div className="stat" style={rightAlign}>
           <span className="label">↑ Upload</span>
           <div>
-            <span className="big-kb">{s?.network.upKBs ?? 0}</span>
-            <span className="unit">kB/s</span>
+            <span className="big-kb">{up.value}</span>
+            <span className="unit">{up.unit}</span>
           </div>
         </div>
       </div>

@@ -43,6 +43,28 @@ npm start
 - **手动翻页:** 点击左半边 → Console,右半边 → Bridge;或用 `←` / `→`。
 - **固定某一屏**(适合常驻展示): `http://localhost:3000/?screen=bridge` 或 `?screen=console`。
 
+## 局域网 / 多设备访问
+
+这是一个**中心化看板**:任何设备打开它,看到的都是**运行服务那台主机**的数据 —— Console 屏显示那台主机的 Claude Code 用量,Bridge 屏显示那台主机的系统状态(不是正在看的这台设备的)。
+
+让局域网内其他设备能访问:
+
+1. **用生产模式运行**(常驻展示推荐):
+   ```bash
+   npm run build
+   npm run start:lan   # = next start -H 0.0.0.0
+   ```
+2. **在其他设备上**用主机的局域网地址访问,例如 `http://192.168.50.73:3000` —— 不要用 `localhost`。
+
+小贴士:
+
+- 为避免 DHCP 换 IP,给主机设一个保留 IP,或用 mDNS 主机名访问:`http://<主机名>.local:3000`。
+- **跨设备用 `npm run dev`?** Next.js 会对非 `localhost` 来源拦截它的开发专用资源(HMR、浮层字体),返回 `403`。把每个访问方的 IP 加进 `next.config.ts` 的 `allowedDevOrigins` 再重启即可;生产模式(`start`)没有这个限制。
+
+### 电子墨水设备(Kindle 等)
+
+老的电子墨水浏览器(如 Kindle「体验版浏览器」)跑不动主仪表盘依赖的 React 客户端和容器查询 CSS,所以 `/` 在上面会空白/错乱。请改用 **`/e`** —— 一个服务端渲染、**无 JavaScript** 的页面:数据直接写进 HTML,每 60 秒自动刷新,并在 Console 和 Bridge 两屏之间轮播。例如:`http://192.168.50.73:3000/e`。
+
 ## 工作原理
 
 ```

@@ -212,6 +212,28 @@ body {
   color: #fff;
 }
 
+/* 5h / 7d usage limit meters */
+.limits {
+  display: flex;
+  gap: 4cqw;
+  margin-top: 1.4cqh;
+}
+.limits .lim {
+  flex: 1;
+}
+.limits .minibar {
+  height: 1.6cqh;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--paper);
+  margin-top: 0.5cqh;
+}
+.limits .minibar .mfill {
+  height: 100%;
+  background: var(--bar);
+}
+
 /* gauges */
 .gauges {
   display: flex;

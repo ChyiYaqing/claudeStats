@@ -43,6 +43,28 @@ npm start
 - **Manual paging:** click the left half → Console, right half → Bridge; or use `←` / `→`.
 - **Pin a screen** (handy for a kiosk): `http://localhost:3000/?screen=bridge` or `?screen=console`.
 
+## LAN / multi-device access
+
+This is a **central dashboard**: every device that opens it sees the *host machine's* data — the Console screen shows that host's Claude Code usage, and the Bridge screen shows that host's system stats (not the viewing device's).
+
+To reach it from other devices on your network:
+
+1. **Run it in production mode** (recommended for an always-on display):
+   ```bash
+   npm run build
+   npm run start:lan   # = next start -H 0.0.0.0
+   ```
+2. **Open it from another device** at the host's LAN address, e.g. `http://192.168.50.73:3000` — not `localhost`.
+
+Tips:
+
+- To survive DHCP address changes, give the host a reserved IP or use its mDNS name: `http://<hostname>.local:3000`.
+- **Using `npm run dev` across devices?** Next.js returns `403` for its dev-only assets (HMR, overlay font) when requested from a non-`localhost` origin. Add each accessing IP to `allowedDevOrigins` in `next.config.ts` and restart. Production mode (`start`) has no such restriction.
+
+### E-ink devices (Kindle, etc.)
+
+Old e-ink browsers (e.g. the Kindle "Experimental Browser") can't run the React client or the container-query CSS the main dashboard relies on, so `/` shows up blank/unstyled there. Open **`/e`** instead — a server-rendered, **no-JavaScript** view that bakes the data straight into the HTML, auto-refreshes every 60s, and alternates between the Console and Bridge screens. Example: `http://192.168.50.73:3000/e`.
+
 ## How it works
 
 ```

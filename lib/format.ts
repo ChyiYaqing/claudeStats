@@ -7,6 +7,13 @@ export function formatTokens(n: number): string {
   return `${Math.round(n)}`;
 }
 
+/** A kB/s rate, auto-scaled: 1209 -> {value:"1.2",unit:"MB/s"}, 105 -> {"105","kB/s"}. */
+export function formatRate(kbs: number): { value: string; unit: string } {
+  if (kbs >= 1_000_000) return { value: (kbs / 1_000_000).toFixed(1), unit: "GB/s" };
+  if (kbs >= 1_000) return { value: (kbs / 1_000).toFixed(1), unit: "MB/s" };
+  return { value: `${Math.round(kbs)}`, unit: "kB/s" };
+}
+
 /** 72_300_000 ms -> "20h 5m"; under an hour -> "5m 12s". */
 export function formatDuration(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -31,6 +38,17 @@ export function formatUSD(n: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+/** ms until a reset -> "39m", "1h39m", "4d11h". "" when not in the future. */
+export function formatReset(ms: number): string {
+  if (ms <= 0) return "";
+  const mins = Math.floor(ms / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return `${days}d${hours % 24}h`;
+  if (hours >= 1) return `${hours}h${mins % 60}m`;
+  return `${mins}m`;
 }
 
 /** Local wall clock "21:01:40". */

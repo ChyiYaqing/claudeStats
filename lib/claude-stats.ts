@@ -2,11 +2,17 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { costForUsage, type Usage } from "./pricing";
-import { formatClock, formatDate, formatDuration } from "./format";
+import { formatClock, formatDate, formatDuration, formatReset } from "./format";
 import type { ClaudeStats } from "./types";
 
 const CLAUDE_DIR = path.join(os.homedir(), ".claude");
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects");
+
+// The statusline script caches the live API rate limits here; we reuse it as
+// the source for the 5h / 7d usage meters. Treat data older than one window
+// (6h) as stale, matching statusline.sh.
+const LIMITS_CACHE = path.join(os.homedir(), ".cache", "statusline", "last.json");
+const LIMITS_TTL_MS = 6 * 60 * 60 * 1000;
 
 // Only read transcripts touched recently — enough to cover "today" plus the
 // active session, while skipping months of old logs.
@@ -68,6 +74,39 @@ function formatModel(id: string): string {
   if (!m) return id;
   const fam = m[1].charAt(0).toUpperCase() + m[1].slice(1);
   return `${fam} ${m[2]}.${m[3]}`;
+}
+
+// Context-window size for the model. The transcripts don't record the window,
+// so it's inferred from the model name (plan-dependent — edit to match yours):
+// the Claude 4.x Opus models run a 1M window. As a safety net, any observed
+// usage above 200k is treated as 1M regardless of the model.
+function contextWindow(model: string, maxCtxSeen: number): number {
+  if (/opus-4-\d+/.test(model.toLowerCase())) return 1_000_000;
+  return maxCtxSeen > 200_000 ? 1_000_000 : 200_000;
+}
+
+function readLimits(): ClaudeStats["limits"] {
+  const empty = { fiveHour: null, sevenDay: null };
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(LIMITS_CACHE);
+  } catch {
+    return empty;
+  }
+  if (Date.now() - stat.mtimeMs > LIMITS_TTL_MS) return empty; // stale window
+  let obj: any;
+  try {
+    obj = JSON.parse(fs.readFileSync(LIMITS_CACHE, "utf8"));
+  } catch {
+    return empty;
+  }
+  const window = (w: any) => {
+    if (!w || typeof w.used_percentage !== "number") return null;
+    const ms = typeof w.resets_at === "number" ? w.resets_at * 1000 - Date.now() : 0;
+    return { percent: Math.round(w.used_percentage), reset: formatReset(ms) };
+  };
+  const rl = obj?.rate_limits ?? {};
+  return { fiveHour: window(rl.five_hour), sevenDay: window(rl.seven_day) };
 }
 
 function compute(): ClaudeStats {
@@ -132,7 +171,7 @@ function compute(): ClaudeStats {
   const ctxOf = (u: Usage) =>
     (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
   const maxCtx = assistants.reduce((mx, a) => Math.max(mx, ctxOf(a.usage)), 0);
-  const limit = maxCtx > 200_000 ? 1_000_000 : 200_000;
+  const limit = contextWindow(last?.model ?? "", maxCtx);
   const modelBase = last ? formatModel(last.model) : "—";
   const model = last ? `${modelBase}${limit === 1_000_000 ? " [1m]" : ""}` : "—";
   const ctxTokens = last ? ctxOf(last.usage) : 0;
@@ -204,6 +243,7 @@ function compute(): ClaudeStats {
       prompt: latestPrompt?.text ?? "—",
       idleSeconds,
     },
+    limits: readLimits(),
     updatedAt: formatClock(now),
     date: todayStr,
   };

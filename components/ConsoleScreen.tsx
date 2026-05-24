@@ -45,6 +45,11 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
         </div>
       </div>
 
+      <div className="limits">
+        <LimitMeter label="5h Limit" data={s?.limits.fiveHour ?? null} />
+        <LimitMeter label="7d Limit" data={s?.limits.sevenDay ?? null} />
+      </div>
+
       <div className="section-label">Today’s Workshop</div>
       <div className="bigrow">
         <div className="big">
@@ -101,5 +106,27 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
         <span>1 / 2 · CLAUDE</span>
       </div>
     </section>
+  );
+}
+
+function LimitMeter({
+  label,
+  data,
+}: {
+  label: string;
+  data: { percent: number; reset: string } | null;
+}) {
+  return (
+    <div className="lim">
+      <div className="row">
+        <span className="label">{label}</span>
+        <span className="caption">
+          {data ? `${data.percent}%${data.reset ? ` · ${data.reset}` : ""}` : "—"}
+        </span>
+      </div>
+      <div className="minibar">
+        <div className="mfill" style={{ width: `${data?.percent ?? 0}%` }} />
+      </div>
+    </div>
   );
 }
