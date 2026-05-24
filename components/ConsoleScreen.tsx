@@ -1,0 +1,105 @@
+import type { ClaudeStats } from "@/lib/types";
+import { formatIdle, formatTokens, formatUSD } from "@/lib/format";
+import TokensPerHourChart from "./TokensPerHourChart";
+
+const rightAlign = { alignItems: "flex-end", textAlign: "right" } as const;
+
+export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) {
+  const s = stats;
+  const live = s ? s.latestAction.idleSeconds < 120 : false;
+
+  return (
+    <section className="screen">
+      <header className="head">
+        <div className="status">
+          <span className="dot" style={{ background: live ? "var(--ink)" : "var(--ink-faint)" }} />
+          {live ? "LIVE" : "IDLE"}
+        </div>
+        <h1 className="title">Claude Console</h1>
+        <div className="subtitle">Code Companion</div>
+      </header>
+
+      <hr className="rule" />
+
+      <div className="row" style={{ padding: "2cqh 0" }}>
+        <div className="stat">
+          <span className="label">⌗ Model</span>
+          <span className="value">{s?.model ?? "—"}</span>
+        </div>
+        <div className="stat" style={rightAlign}>
+          <span className="label">Session ⏱</span>
+          <span className="value">{s?.session.duration ?? "—"}</span>
+          <span className="caption">
+            {s ? `${s.session.messages} msg / ${s.session.replies} reply` : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="context">
+        <span className="label">Context Window</span>
+        <div className="pill" style={{ marginTop: "0.8cqh" }}>
+          <div className="fill" style={{ width: `${s?.context.percent ?? 0}%` }} />
+          <div className="pilltext">
+            {s ? `${s.context.percent.toFixed(1)}% · ${formatTokens(s.context.tokens)}` : "—"}
+          </div>
+        </div>
+      </div>
+
+      <div className="section-label">Today’s Workshop</div>
+      <div className="bigrow">
+        <div className="big">
+          <span className="icon">❖</span>
+          <span className="num">{s ? formatUSD(s.today.costUSD) : "—"}</span>
+          <span className="caption">spent today</span>
+        </div>
+        <div className="big">
+          <span className="icon">⚡</span>
+          <span className="num">{s ? formatTokens(s.today.tokensOut) : "—"}</span>
+          <span className="caption">tokens out</span>
+        </div>
+        <div className="big">
+          <span className="icon">⚒</span>
+          <span className="num">{s ? s.today.toolCalls : "—"}</span>
+          <span className="caption">tool calls</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: "2.4cqh" }}>
+        <span className="label">Tokens / Hour · 24h</span>
+        <div style={{ marginTop: "0.8cqh" }}>
+          <TokensPerHourChart data={s?.tokensPerHour ?? Array.from({ length: 24 }, (_, hour) => ({ hour, tokens: 0 }))} />
+        </div>
+      </div>
+
+      <div className="row" style={{ marginTop: "1.6cqh" }}>
+        <div className="stat">
+          <span className="value">⚡ {s ? s.speed.tokPerSec.toFixed(1) : "—"} tok/s</span>
+          <span className="caption">
+            avg model speed today · {s?.speed.filesTouched ?? 0} files touched
+          </span>
+        </div>
+        <div className="stat" style={rightAlign}>
+          <span className="value">⚠ {s?.speed.apiErrors ?? 0}</span>
+          <span className="caption">api errors</span>
+        </div>
+      </div>
+
+      <div className="latest">
+        <hr className="rule" style={{ margin: "2cqh 0 1.4cqh" }} />
+        <div className="row">
+          <span className="label">Latest Action</span>
+          <span className="caption">{s ? `idle for ${formatIdle(s.latestAction.idleSeconds)}` : ""}</span>
+        </div>
+        <div className="action">
+          <span style={{ color: "var(--ink-soft)" }}>→</span> {s?.latestAction.tool ?? "—"}
+        </div>
+        <div className="prompt">{s?.latestAction.prompt ?? ""}</div>
+      </div>
+
+      <div className="foot">
+        <span>{s ? `Updated ${s.updatedAt} · ${s.date}` : "—"}</span>
+        <span>1 / 2 · CLAUDE</span>
+      </div>
+    </section>
+  );
+}
