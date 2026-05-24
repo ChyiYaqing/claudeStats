@@ -7,6 +7,13 @@ export function formatTokens(n: number): string {
   return `${Math.round(n)}`;
 }
 
+/** A kB/s rate, auto-scaled: 1209 -> {value:"1.2",unit:"MB/s"}, 105 -> {"105","kB/s"}. */
+export function formatRate(kbs: number): { value: string; unit: string } {
+  if (kbs >= 1_000_000) return { value: (kbs / 1_000_000).toFixed(1), unit: "GB/s" };
+  if (kbs >= 1_000) return { value: (kbs / 1_000).toFixed(1), unit: "MB/s" };
+  return { value: `${Math.round(kbs)}`, unit: "kB/s" };
+}
+
 /** 72_300_000 ms -> "20h 5m"; under an hour -> "5m 12s". */
 export function formatDuration(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));

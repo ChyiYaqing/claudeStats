@@ -8,7 +8,7 @@
 
 import { getClaudeStats } from "@/lib/claude-stats";
 import { getSystemStats } from "@/lib/system-stats";
-import { formatTokens, formatUSD, formatIdle } from "@/lib/format";
+import { formatTokens, formatUSD, formatIdle, formatRate } from "@/lib/format";
 import type { ClaudeStats, SystemStats } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -142,6 +142,8 @@ function Console({ stats: s }: { stats: ClaudeStats }) {
 
 function Bridge({ stats: s }: { stats: SystemStats }) {
   const netMax = s.network.maxKBs || 1;
+  const down = formatRate(s.network.downKBs);
+  const up = formatRate(s.network.upKBs);
   return (
     <div className="page">
       <div className="hd">
@@ -165,13 +167,13 @@ function Bridge({ stats: s }: { stats: SystemStats }) {
         <div className="cell">
           <div className="lbl">↓ Download</div>
           <div className="val">
-            {s.network.downKBs} <span className="unit">kB/s</span>
+            {down.value} <span className="unit">{down.unit}</span>
           </div>
         </div>
         <div className="cell r">
           <div className="lbl">↑ Upload</div>
           <div className="val">
-            {s.network.upKBs} <span className="unit">kB/s</span>
+            {up.value} <span className="unit">{up.unit}</span>
           </div>
         </div>
       </div>
