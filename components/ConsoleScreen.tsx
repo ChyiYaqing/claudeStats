@@ -19,9 +19,7 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
         <div className="subtitle">Code Companion</div>
       </header>
 
-      <hr className="rule" />
-
-      <div className="row" style={{ padding: "2cqh 0" }}>
+      <div className="row">
         <div className="stat">
           <span className="label">⌗ Model</span>
           <span className="value">{s?.model ?? "—"}</span>
@@ -35,21 +33,23 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
         </div>
       </div>
 
-      <div className="context">
-        <span className="label">Context Window</span>
-        <div className="pill" style={{ marginTop: "0.8cqh" }}>
-          <div className="fill" style={{ width: `${s?.context.percent ?? 0}%` }} />
-          <div className="pilltext">
-            {s ? `${s.context.percent.toFixed(1)}% · ${formatTokens(s.context.tokens)}` : "—"}
+      <div className="usage">
+        <div className="context">
+          <span className="label">Context Window</span>
+          <div className="pill" style={{ marginTop: "0.8cqh" }}>
+            <div className="fill" style={{ width: `${s?.context.percent ?? 0}%` }} />
+            <div className="pilltext">
+              {s ? `${s.context.percent.toFixed(1)}% · ${formatTokens(s.context.tokens)}` : "—"}
+            </div>
           </div>
+        </div>
+        <div className="limits">
+          <LimitMeter label="5h Limit" data={s?.limits.fiveHour ?? null} />
+          <LimitMeter label="7d Limit" data={s?.limits.sevenDay ?? null} />
         </div>
       </div>
 
-      <div className="limits">
-        <LimitMeter label="5h Limit" data={s?.limits.fiveHour ?? null} />
-        <LimitMeter label="7d Limit" data={s?.limits.sevenDay ?? null} />
-      </div>
-
+      <div className="workshop">
       <div className="section-label">Today’s Workshop</div>
       <div className="bigrow">
         <div className="big">
@@ -68,15 +68,16 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
           <span className="caption">tool calls</span>
         </div>
       </div>
+      </div>
 
-      <div style={{ marginTop: "2.4cqh" }}>
+      <div className="chartblock">
         <span className="label">Tokens / Hour · 24h</span>
         <div style={{ marginTop: "0.8cqh" }}>
           <TokensPerHourChart data={s?.tokensPerHour ?? Array.from({ length: 24 }, (_, hour) => ({ hour, tokens: 0 }))} />
         </div>
       </div>
 
-      <div className="row" style={{ marginTop: "1.6cqh" }}>
+      <div className="row">
         <div className="stat">
           <span className="value">⚡ {s ? s.speed.tokPerSec.toFixed(1) : "—"} tok/s</span>
           <span className="caption">
@@ -90,7 +91,7 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
       </div>
 
       <div className="latest">
-        <hr className="rule" style={{ margin: "2cqh 0 1.4cqh" }} />
+        <hr className="rule" style={{ margin: "0 0 1.2cqh" }} />
         <div className="row">
           <span className="label">Latest Action</span>
           <span className="caption">{s ? `idle for ${formatIdle(s.latestAction.idleSeconds)}` : ""}</span>

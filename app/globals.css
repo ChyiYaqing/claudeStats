@@ -14,7 +14,7 @@
   --rule-strong: #9c9684;
   --bar: #1f1d16;
   --surround: #232220;
-  --serif: Georgia, "Iowan Old Style", "Times New Roman", "Songti SC", serif;
+  --serif: var(--font-serif), Georgia, "Iowan Old Style", "Times New Roman", "Songti SC", serif;
 }
 
 * {
@@ -32,6 +32,9 @@ body {
   background: var(--surround);
   color: var(--ink);
   font-family: var(--serif);
+  /* Lora's default line box is ~1.4; pin it near Georgia's ~1.15 so the fixed
+     3:4 frame still fits all sections (otherwise the footer overflows). */
+  line-height: 1.15;
   -webkit-font-smoothing: antialiased;
   display: flex;
   align-items: center;
@@ -62,9 +65,13 @@ body {
 .screen {
   width: 50%;
   height: 100%;
-  padding: 5cqh 5.5cqw 3.5cqh;
+  padding: 4cqh 5.5cqw 2.5cqh;
   display: flex;
   flex-direction: column;
+  /* Distribute leftover height evenly between section groups so the page keeps
+     a balanced rhythm instead of pooling all slack above the footer. */
+  justify-content: space-between;
+  gap: 0.4cqh;
 }
 
 /* ── header ── */
@@ -72,6 +79,7 @@ body {
   text-align: center;
   position: relative;
   padding-bottom: 2cqh;
+  border-bottom: 1px solid var(--rule);
 }
 .status {
   position: absolute;
@@ -121,7 +129,7 @@ body {
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin: 2.4cqh 0 1.6cqh;
+  margin: 0 0 1.4cqh;
 }
 .row {
   display: flex;
@@ -173,7 +181,7 @@ body {
   color: var(--ink-soft);
 }
 .big .num {
-  font-size: 5.2cqh;
+  font-size: 4.8cqh;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -183,9 +191,6 @@ body {
 }
 
 /* context window pill */
-.context {
-  margin-top: 1.4cqh;
-}
 .pill {
   position: relative;
   height: 3cqh;
@@ -212,17 +217,17 @@ body {
   color: #fff;
 }
 
-/* 5h / 7d usage limit meters */
+/* 5h / 7d usage limit meters — bar height matches the context pill */
 .limits {
   display: flex;
   gap: 4cqw;
-  margin-top: 1.4cqh;
+  margin-top: 1cqh;
 }
 .limits .lim {
   flex: 1;
 }
 .limits .minibar {
-  height: 1.6cqh;
+  height: 3cqh;
   border: 1px solid var(--rule-strong);
   border-radius: 999px;
   overflow: hidden;
@@ -269,7 +274,7 @@ body {
   display: block;
 }
 .bars {
-  height: 14cqh;
+  height: 10cqh;
 }
 .netchart {
   height: 16cqh;
@@ -303,7 +308,7 @@ body {
 
 /* latest action */
 .latest {
-  margin-top: 1.4cqh;
+  margin-top: 0;
 }
 .latest .action {
   font-size: 2.6cqh;
@@ -324,11 +329,10 @@ body {
 
 /* footer */
 .foot {
-  margin-top: auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 1.6cqh;
+  padding-top: 0;
   font-size: 1.5cqh;
   letter-spacing: 0.12em;
   color: var(--ink-faint);
