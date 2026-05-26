@@ -2,23 +2,25 @@
 
 [English](./README.md) | 简体中文
 
-一个电子墨水(e-ink)风格的桌面仪表盘,把你的 **Claude Code 使用情况** 和 **本机系统遥测** 并排展示。它在温暖的「纸张」底色上轮播两块竖屏画面 —— 适合放在工位旁的副屏或常驻展示屏上。
+一个电子墨水(e-ink)风格的桌面仪表盘,把你的 **Claude Code** 和 **Codex** 使用情况,以及 **本机系统遥测** 并排展示。它在温暖的「纸张」底色上轮播三块竖屏画面 —— 适合放在工位旁的副屏或常驻展示屏上。
 
-| Console — Code Companion | Bridge — System Telemetry |
-| :---: | :---: |
-| ![Console 屏](./misc/images/code-companion.png) | ![Bridge 屏](./misc/images/system-telemetry.png) |
+| Console — Code Companion | Codex — Agent Workspace | Bridge — System Telemetry |
+| :---: | :---: | :---: |
+| ![Console 屏](./misc/images/code-companion.png) | ![Codex 屏](./misc/images/codex-console.png) | ![Bridge 屏](./misc/images/system-telemetry.png) |
 
 ## 功能
 
-- **Console 屏** —— 模型、当前会话时长、上下文窗口占用、今日预估花费 / 输出 token / 工具调用次数、24 小时「每小时 token」柱状图、平均输出速度、触达文件数、API 错误数,以及最近一次操作。
+- **Console 屏** —— Claude Code:模型、当前会话时长、上下文窗口占用、今日预估花费 / 输出 token / 工具调用次数、24 小时「每小时 token」柱状图、平均输出速度、触达文件数、API 错误数,以及最近一次操作。
+- **Codex 屏** —— Codex:模型、当前会话时长、上下文窗口占用、每周用量限额、今日 token / 工具调用次数 / 线程数、24 小时「每小时 token」柱状图、进行中与已完成目标数、事件错误数,以及最近一次操作。
 - **Bridge 屏** —— CPU / GPU / RAM 环形仪表、实时 60 点网络采样(下行/上行)、剩余磁盘、电池。
-- **免操作展示** —— 两块画面自动轮播。也可手动翻页:点击左/右半边,或按 `←` / `→`;还能用 URL 参数固定某一屏(见 [使用](#使用))。
-- **全程本地** —— 使用数据来自你自己的 `~/.claude` 会话记录,系统指标在本机读取,不向任何地方上传。
+- **免操作展示** —— 三块画面自动轮播。也可手动翻页:点击左/右边缘,或按 `←` / `→`;还能用 URL 参数固定某一屏(见 [使用](#使用))。
+- **全程本地** —— 使用数据来自你自己的 `~/.claude` 和 `~/.codex` 数据,系统指标在本机读取,不向任何地方上传。
 
 ## 环境要求
 
 - Node.js 18+(Next.js 16)。
-- 在你使用 Claude Code 的那台机器上运行,这样它才能读取 `~/.claude/projects/`。
+- 在你使用 Claude Code / Codex 的那台机器上运行,这样它才能读取 `~/.claude/projects/` 和 `~/.codex/`。
+- Codex 屏通过 `sqlite3` 命令行读取 Codex 本机的 SQLite 数据库(macOS 自带;Debian/Ubuntu 上 `apt install sqlite3`)。没有它时,来自 SQLite 的字段(模型、线程、目标)会显示为「—」,其余仍能从会话日志读取。
 - 支持 macOS / Linux / Windows。注意:macOS 上 GPU 利用率常常拿不到(此时仪表只显示型号、不显示百分比)。
 
 ## 快速开始
@@ -39,13 +41,13 @@ npm start
 
 ## 使用
 
-- **自动轮播:** 最后一次交互约 18 秒后自动切到另一屏。
-- **手动翻页:** 点击左半边 → Console,右半边 → Bridge;或用 `←` / `→`。
-- **固定某一屏**(适合常驻展示): `http://localhost:3000/?screen=bridge` 或 `?screen=console`。
+- **自动轮播:** 最后一次交互约 18 秒后,三块画面依次轮播。
+- **手动翻页:** 点击左边缘 → Console,右边缘 → 下一屏;或用 `←` / `→` 逐屏切换。
+- **固定某一屏**(适合常驻展示): `?screen=console`、`?screen=codex`(或 `?screen=2`)、`?screen=bridge`(或 `?screen=3`)—— 例如 `http://localhost:3000/?screen=codex`。
 
 ## 局域网 / 多设备访问
 
-这是一个**中心化看板**:任何设备打开它,看到的都是**运行服务那台主机**的数据 —— Console 屏显示那台主机的 Claude Code 用量,Bridge 屏显示那台主机的系统状态(不是正在看的这台设备的)。
+这是一个**中心化看板**:任何设备打开它,看到的都是**运行服务那台主机**的数据 —— Console 屏和 Codex 屏显示那台主机的 Claude Code / Codex 用量,Bridge 屏显示那台主机的系统状态(不是正在看的这台设备的)。
 
 让局域网内其他设备能访问:
 
@@ -63,17 +65,19 @@ npm start
 
 ### 电子墨水设备(Kindle 等)
 
-老的电子墨水浏览器(如 Kindle「体验版浏览器」)跑不动主仪表盘依赖的 React 客户端和容器查询 CSS,所以 `/` 在上面会空白/错乱。请改用 **`/e`** —— 一个服务端渲染、**无 JavaScript** 的页面:数据直接写进 HTML,每 60 秒自动刷新,并在 Console 和 Bridge 两屏之间轮播。例如:`http://192.168.50.73:3000/e`。
+老的电子墨水浏览器(如 Kindle「体验版浏览器」)跑不动主仪表盘依赖的 React 客户端和容器查询 CSS,所以 `/` 在上面会空白/错乱。请改用 **`/e`** —— 一个服务端渲染、**无 JavaScript** 的页面:数据直接写进 HTML,每 60 秒自动刷新,并在 Console 和 Bridge 两屏之间轮播(Codex 屏仅在主仪表盘中提供)。例如:`http://192.168.50.73:3000/e`。
 
 ## 工作原理
 
 ```
 客户端 (app/page.tsx, 轮询)
   ├─ GET /api/claude  → lib/claude-stats.ts   读取 ~/.claude/projects/**/*.jsonl
+  ├─ GET /api/codex   → lib/codex-stats.ts    读取 ~/.codex(sqlite + 会话 rollout)
   └─ GET /api/system  → lib/system-stats.ts   通过 `systeminformation` 读取系统
 ```
 
 - **Claude 统计** 通过扫描 `~/.claude/projects/` 下最近(约 2 天内)的 JSONL 会话记录得到,逐行解析为会话 / 今日 / 上下文等聚合数据,结果缓存约 10 秒。
+- **Codex 统计** 来自 `~/.codex`:线程与目标数量通过 `sqlite3` 命令行从它的 SQLite 数据库(`state_*.sqlite`、`goals_*.sqlite`)读取,token / 工具 / 限额事件则解析自最近的会话 rollout JSONL。同样缓存约 10 秒。
 - **系统统计** 来自 [`systeminformation`](https://www.npmjs.com/package/systeminformation) 包。后台每秒采样一次,维护一段滚动的 60 点网络曲线。
 
 ### 花费是估算值
@@ -88,17 +92,20 @@ app/
   layout.tsx          # 根外壳 + 元数据
   globals.css         # 电子墨水设计系统(CSS 容器 + cq* 单位)
   api/claude/route.ts # GET /api/claude
+  api/codex/route.ts  # GET /api/codex
   api/system/route.ts # GET /api/system
-components/           # ConsoleScreen、BridgeScreen、仪表、图表
+  e/page.tsx          # /e —— 无 JS 的电子墨水视图(Console + Bridge)
+components/           # ConsoleScreen、CodexScreen、BridgeScreen、仪表、图表
 lib/
   claude-stats.ts     # 解析 ~/.claude 会话记录(仅服务端)
+  codex-stats.ts      # 解析 ~/.codex sqlite + rollout(仅服务端)
   system-stats.ts     # 通过 systeminformation 读取系统(仅服务端)
   pricing.ts          # 可编辑的花费价格表
   format.ts           # 客户端安全的格式化工具
-  types.ts            # ClaudeStats / SystemStats —— 服务端↔客户端的契约
-misc/images/          # 两张设计参考效果图
+  types.ts            # ClaudeStats / CodexStats / SystemStats —— 服务端↔客户端的契约
+misc/images/          # 设计参考效果图
 ```
 
 ## 技术栈
 
-Next.js 16(App Router)· React 19 · TypeScript · `systeminformation`。
+Next.js 16(App Router)· React 19 · TypeScript · `systeminformation` · `sqlite3` 命令行(Codex 统计)。

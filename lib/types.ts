@@ -38,6 +38,41 @@ export interface ClaudeStats {
   date: string; // "2026-05-21"
 }
 
+export interface CodexStats {
+  model: string;
+  session: {
+    duration: string;
+    threads: number;
+    totalThreads: number;
+  };
+  context: {
+    percent: number;
+    tokens: number;
+    limit: number;
+  };
+  today: {
+    tokens: number;
+    toolCalls: number;
+    threads: number;
+  };
+  tokensPerHour: { hour: number; tokens: number }[];
+  workspace: {
+    activeGoals: number;
+    completedGoals: number;
+    errors: number;
+  };
+  latestAction: {
+    tool: string;
+    prompt: string;
+    idleSeconds: number;
+  };
+  limits: {
+    weekly: { percent: number; reset: string } | null;
+  };
+  updatedAt: string;
+  date: string;
+}
+
 export interface SystemStats {
   cpu: { percent: number; busyCores: number; cores: number };
   gpu: { percent: number | null; model: string | null }; // percent null => no utilization data

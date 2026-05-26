@@ -55,15 +55,15 @@ body {
   user-select: none;
 }
 
-/* Sliding two-screen track. */
+/* Sliding dashboard track. */
 .track {
   display: flex;
-  width: 200%;
+  width: 300%;
   height: 100%;
   transition: transform 320ms ease;
 }
 .screen {
-  width: 50%;
+  width: calc(100% / 3);
   height: 100%;
   padding: 4cqh 5.5cqw 2.5cqh;
   display: flex;

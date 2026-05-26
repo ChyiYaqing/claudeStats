@@ -88,7 +88,7 @@ export default function BridgeScreen({ stats }: { stats: SystemStats | null }) {
 
       <div className="foot">
         <span>{s ? `Updated ${s.updatedAt}` : "—"}</span>
-        <span>2 / 2 · BRIDGE</span>
+        <span>3 / 3 · BRIDGE</span>
       </div>
     </section>
   );

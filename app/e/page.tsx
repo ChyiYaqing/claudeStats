@@ -2,19 +2,20 @@
 // (the Kindle "Experimental Browser" can't run the React client or CSS
 // container queries the main dashboard relies on). Data is rendered straight
 // into the HTML; the page auto-reloads via <meta refresh>, and each screen
-// points the next refresh at the other, so Console/Bridge alternate with no
-// client state. CSS is kept to widely-supported features (no cq* units, no
-// aspect-ratio, no flex gap) and sized in vh/vw so it fills any screen.
+// points the next refresh at the following one, so Console → Codex → Bridge
+// cycle with no client state. CSS is kept to widely-supported features (no
+// cq* units, no aspect-ratio, no flex gap) and sized in vh/vw so it fills any screen.
 
 import { getClaudeStats } from "@/lib/claude-stats";
+import { getCodexStats } from "@/lib/codex-stats";
 import { getSystemStats } from "@/lib/system-stats";
 import { formatTokens, formatUSD, formatIdle, formatRate } from "@/lib/format";
-import type { ClaudeStats, SystemStats } from "@/lib/types";
+import type { ClaudeStats, CodexStats, SystemStats } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const REFRESH = 60; // seconds between full-page reloads (one e-ink flash each)
+const REFRESH = 15; // seconds between full-page reloads (one e-ink flash each)
 
 export default async function EinkPage({
   searchParams,
@@ -22,15 +23,31 @@ export default async function EinkPage({
   searchParams: Promise<{ screen?: string }>;
 }) {
   const { screen } = await searchParams;
-  const isBridge = screen === "bridge" || screen === "2";
-  const next = isBridge ? "/e?screen=console" : "/e?screen=bridge";
+  const view =
+    screen === "codex" || screen === "2"
+      ? "codex"
+      : screen === "bridge" || screen === "3"
+        ? "bridge"
+        : "console";
+  const next =
+    view === "console"
+      ? "/e?screen=codex"
+      : view === "codex"
+        ? "/e?screen=bridge"
+        : "/e?screen=console";
 
   return (
     <>
       <meta httpEquiv="refresh" content={`${REFRESH}; url=${next}`} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="eink">
-        {isBridge ? <Bridge stats={await getSystemStats()} /> : <Console stats={getClaudeStats()} />}
+        {view === "bridge" ? (
+          <Bridge stats={await getSystemStats()} />
+        ) : view === "codex" ? (
+          <Codex stats={getCodexStats()} />
+        ) : (
+          <Console stats={getClaudeStats()} />
+        )}
       </div>
     </>
   );
@@ -71,21 +88,9 @@ function Console({ stats: s }: { stats: ClaudeStats }) {
         </div>
       </div>
 
-      <div className="row2">
-        <div className="cell">
-          <div className="lbl">5h Limit</div>
-          <div className="val">
-            {s.limits.fiveHour ? `${s.limits.fiveHour.percent}%` : "—"}
-            {s.limits.fiveHour?.reset ? <span className="unit"> · {s.limits.fiveHour.reset}</span> : null}
-          </div>
-        </div>
-        <div className="cell r">
-          <div className="lbl">7d Limit</div>
-          <div className="val">
-            {s.limits.sevenDay ? `${s.limits.sevenDay.percent}%` : "—"}
-            {s.limits.sevenDay?.reset ? <span className="unit"> · {s.limits.sevenDay.reset}</span> : null}
-          </div>
-        </div>
+      <div className="limits">
+        <Limit label="5h Limit" data={s.limits.fiveHour} />
+        <Limit label="7d Limit" data={s.limits.sevenDay} />
       </div>
 
       <div className="seclbl">Today’s Workshop</div>
@@ -134,7 +139,105 @@ function Console({ stats: s }: { stats: ClaudeStats }) {
         <span>
           Updated {s.updatedAt} · {s.date}
         </span>
-        <span className="r2">1 / 2 · CONSOLE</span>
+        <span className="r2">1 / 3 · CONSOLE</span>
+      </div>
+    </div>
+  );
+}
+
+function Codex({ stats: s }: { stats: CodexStats }) {
+  const max = Math.max(1, ...s.tokensPerHour.map((b) => b.tokens));
+  return (
+    <div className="page">
+      <div className="hd">
+        <div className="title">Codex Console</div>
+        <div className="sub">Agent Workspace</div>
+      </div>
+      <hr className="rule" />
+
+      <div className="row2">
+        <div className="cell">
+          <div className="lbl">⌗ Model</div>
+          <div className="val">{s.model}</div>
+        </div>
+        <div className="cell r">
+          <div className="lbl">Session</div>
+          <div className="val">{s.session.duration}</div>
+          <div className="cap">
+            {s.session.threads} recent / {s.session.totalThreads} total
+          </div>
+        </div>
+      </div>
+
+      <div className="blk">
+        <div className="lbl">Context Window</div>
+        <div className="pill">
+          <div className="fill" style={{ width: `${s.context.percent}%` }} />
+        </div>
+        <div className="cap">
+          {s.context.percent.toFixed(1)}% · {formatTokens(s.context.tokens)} /{" "}
+          {formatTokens(s.context.limit)}
+        </div>
+      </div>
+
+      <div className="limits">
+        <Limit label="7d Limit" data={s.limits.weekly} />
+        <Limit
+          label="Goals"
+          data={{
+            percent: Math.min(100, s.workspace.completedGoals * 10),
+            reset: `${s.workspace.activeGoals} active`,
+          }}
+        />
+      </div>
+
+      <div className="seclbl">Today’s Codex</div>
+      <div className="row3">
+        <div className="big">
+          <div className="num">{formatTokens(s.today.tokens)}</div>
+          <div className="cap">tokens used</div>
+        </div>
+        <div className="big">
+          <div className="num">{s.today.toolCalls}</div>
+          <div className="cap">tool calls</div>
+        </div>
+        <div className="big">
+          <div className="num">{s.today.threads}</div>
+          <div className="cap">threads</div>
+        </div>
+      </div>
+
+      <div className="blk">
+        <div className="lbl">Tokens / Hour · 24h</div>
+        <Bars values={s.tokensPerHour.map((b) => b.tokens)} max={max} />
+      </div>
+
+      <div className="row2">
+        <div className="cell">
+          <div className="val">◆ {s.workspace.activeGoals} active</div>
+          <div className="cap">{s.workspace.completedGoals} goals completed</div>
+        </div>
+        <div className="cell r">
+          <div className="val">⚠ {s.workspace.errors}</div>
+          <div className="cap">event errors today</div>
+        </div>
+      </div>
+
+      <hr className="rule" />
+      <div className="blk">
+        <div className="row2">
+          <span className="cell lbl">Latest Action</span>
+          <span className="cell cap r">idle for {formatIdle(s.latestAction.idleSeconds)}</span>
+        </div>
+        <div className="val">→ {s.latestAction.tool}</div>
+        <div className="cap prompt">{s.latestAction.prompt}</div>
+      </div>
+
+      <div className="ft">
+        <span>
+          Updated {s.updatedAt} · {s.date}
+        </span>
+        <span className="r2">2 / 3 · CODEX</span>
       </div>
     </div>
   );
@@ -205,7 +308,29 @@ function Bridge({ stats: s }: { stats: SystemStats }) {
 
       <div className="ft">
         <span>Updated {s.updatedAt}</span>
-        <span className="r2">2 / 2 · BRIDGE</span>
+        <span className="r2">3 / 3 · BRIDGE</span>
+      </div>
+    </div>
+  );
+}
+
+function Limit({
+  label,
+  data,
+}: {
+  label: string;
+  data: { percent: number; reset: string } | null;
+}) {
+  return (
+    <div className="lim">
+      <div className="row2">
+        <span className="cell lbl">{label}</span>
+        <span className="cell cap r">
+          {data ? `${data.percent}%${data.reset ? ` · ${data.reset}` : ""}` : "—"}
+        </span>
+      </div>
+      <div className="minibar">
+        <div className="mfill" style={{ width: `${data?.percent ?? 0}%` }} />
       </div>
     </div>
   );
@@ -286,6 +411,13 @@ const CSS = `
 .eink .big .num{font-size:5.6vh;line-height:1;}
 .eink .pill{position:relative;height:3vh;border:1px solid #9c9684;border-radius:999px;overflow:hidden;background:#f3f0e7;margin:1vh 0 0.6vh;}
 .eink .pill .fill{position:absolute;top:0;bottom:0;left:0;background:#1f1d16;}
+.eink .limits{display:table;table-layout:fixed;width:100%;margin-top:1.4vh;}
+.eink .limits .lim{display:table-cell;vertical-align:top;}
+.eink .limits .lim:first-child{padding-right:2vw;}
+.eink .limits .lim:last-child{padding-left:2vw;}
+.eink .limits .row2{margin-top:0;}
+.eink .limits .minibar{height:3vh;border:1px solid #9c9684;border-radius:999px;overflow:hidden;background:#f3f0e7;margin-top:0.6vh;}
+.eink .limits .minibar .mfill{height:100%;background:#1f1d16;}
 .eink .chart{display:table;table-layout:fixed;width:100%;height:13vh;margin-top:1vh;border-bottom:1px solid #cfc9ba;border-collapse:separate;border-spacing:2px 0;overflow:hidden;}
 .eink .chart .col{display:table-cell;vertical-align:bottom;}
 .eink .chart .bar{background:#15140f;}

@@ -1,10 +1,10 @@
-import type { ClaudeStats } from "@/lib/types";
-import { formatIdle, formatTokens, formatUSD } from "@/lib/format";
+import type { CodexStats } from "@/lib/types";
+import { formatIdle, formatTokens } from "@/lib/format";
 import TokensPerHourChart from "./TokensPerHourChart";
 
 const rightAlign = { alignItems: "flex-end", textAlign: "right" } as const;
 
-export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) {
+export default function CodexScreen({ stats }: { stats: CodexStats | null }) {
   const s = stats;
   const live = s ? s.latestAction.idleSeconds < 120 : false;
 
@@ -15,8 +15,8 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
           <span className="dot" style={{ background: live ? "var(--ink)" : "var(--ink-faint)" }} />
           {live ? "LIVE" : "IDLE"}
         </div>
-        <h1 className="title">Claude Console</h1>
-        <div className="subtitle">Code Companion</div>
+        <h1 className="title">Codex Console</h1>
+        <div className="subtitle">Agent Workspace</div>
       </header>
 
       <div className="row">
@@ -28,7 +28,7 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
           <span className="label">Session ⏱</span>
           <span className="value">{s?.session.duration ?? "—"}</span>
           <span className="caption">
-            {s ? `${s.session.messages} msg / ${s.session.replies} reply` : ""}
+            {s ? `${s.session.threads} recent / ${s.session.totalThreads} total` : ""}
           </span>
         </div>
       </div>
@@ -44,30 +44,40 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
           </div>
         </div>
         <div className="limits">
-          <LimitMeter label="5h Limit" data={s?.limits.fiveHour ?? null} />
-          <LimitMeter label="7d Limit" data={s?.limits.sevenDay ?? null} />
+          <LimitMeter label="7d Limit" data={s?.limits.weekly ?? null} />
+          <LimitMeter
+            label="Goals"
+            data={
+              s
+                ? {
+                    percent: Math.min(100, s.workspace.completedGoals * 10),
+                    reset: `${s.workspace.activeGoals} active`,
+                  }
+                : null
+            }
+          />
         </div>
       </div>
 
       <div className="workshop">
-      <div className="section-label">Today’s Workshop</div>
-      <div className="bigrow">
-        <div className="big">
-          <span className="icon">❖</span>
-          <span className="num">{s ? formatUSD(s.today.costUSD) : "—"}</span>
-          <span className="caption">spent today</span>
+        <div className="section-label">Today’s Codex</div>
+        <div className="bigrow">
+          <div className="big">
+            <span className="icon">▣</span>
+            <span className="num">{s ? formatTokens(s.today.tokens) : "—"}</span>
+            <span className="caption">tokens used</span>
+          </div>
+          <div className="big">
+            <span className="icon">⚙</span>
+            <span className="num">{s ? s.today.toolCalls : "—"}</span>
+            <span className="caption">tool calls</span>
+          </div>
+          <div className="big">
+            <span className="icon">◈</span>
+            <span className="num">{s ? s.today.threads : "—"}</span>
+            <span className="caption">threads</span>
+          </div>
         </div>
-        <div className="big">
-          <span className="icon">⚡</span>
-          <span className="num">{s ? formatTokens(s.today.tokensOut) : "—"}</span>
-          <span className="caption">tokens out</span>
-        </div>
-        <div className="big">
-          <span className="icon">⚒</span>
-          <span className="num">{s ? s.today.toolCalls : "—"}</span>
-          <span className="caption">tool calls</span>
-        </div>
-      </div>
       </div>
 
       <div className="chartblock">
@@ -79,14 +89,12 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
 
       <div className="row">
         <div className="stat">
-          <span className="value">⚡ {s ? s.speed.tokPerSec.toFixed(1) : "—"} tok/s</span>
-          <span className="caption">
-            avg model speed today · {s?.speed.filesTouched ?? 0} files touched
-          </span>
+          <span className="value">◆ {s?.workspace.activeGoals ?? 0} active</span>
+          <span className="caption">{s?.workspace.completedGoals ?? 0} goals completed</span>
         </div>
         <div className="stat" style={rightAlign}>
-          <span className="value">⚠ {s?.speed.apiErrors ?? 0}</span>
-          <span className="caption">api errors</span>
+          <span className="value">⚠ {s?.workspace.errors ?? 0}</span>
+          <span className="caption">event errors today</span>
         </div>
       </div>
 
@@ -104,7 +112,7 @@ export default function ConsoleScreen({ stats }: { stats: ClaudeStats | null }) 
 
       <div className="foot">
         <span>{s ? `Updated ${s.updatedAt} · ${s.date}` : "—"}</span>
-        <span>1 / 3 · CLAUDE</span>
+        <span>2 / 3 · CODEX</span>
       </div>
     </section>
   );
